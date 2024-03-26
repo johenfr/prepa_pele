@@ -255,7 +255,82 @@ if __name__ == '__main__':
         'samedi - déjeuner (pique-nique)': 0,
         'dimanche - déjeuner (pique-nique)': 0,
     }
-    lit_tente_pretres = 0
+    porteurs_de_croix = {
+        'samedi matin': [],
+        'samedi après-midi': [],
+        'dimanche matin': [],
+        'dimanche après-midi': [],
+        'lundi matin': []
+    }
+    regulation_securite = {
+        'samedi matin': [],
+        'samedi après-midi': [],
+        'dimanche matin': [],
+        'dimanche après-midi': [],
+        'lundi matin': []
+    }
+    logistique_bivouacs = {
+        'samedi matin': [],
+        'samedi après-midi': [],
+        'dimanche matin': [],
+        'dimanche après-midi': [],
+        'lundi matin': []
+    }
+    logistique_haltes = {
+        'samedi matin': [],
+        'samedi après-midi': [],
+        'dimanche matin': [],
+        'dimanche après-midi': [],
+        'lundi matin': []
+    }
+    eclopes = {
+        'samedi matin': [],
+        'samedi après-midi': [],
+        'dimanche matin': [],
+        'dimanche après-midi': [],
+        'lundi matin': []
+    }
+    aides_chapitres = {
+        'samedi matin': [],
+        'samedi après-midi': [],
+        'dimanche matin': [],
+        'dimanche après-midi': [],
+        'lundi matin': []
+    }
+    messes_greffiers = {
+        'samedi': [],
+        'dimanche': [],
+        'lundi': []
+    }
+    messes_trou_moreau = {
+        'samedi': [],
+        'dimanche': [],
+        'lundi': []
+    }
+    messes_st_nic = {
+        'samedi': [],
+        'dimanche': [],
+        'lundi': []
+    }
+    messes_chartres = {
+        'samedi': [],
+        'dimanche': [],
+        'lundi': []
+    }
+    messes_logistiques = {
+        "samedi 18h30": [],
+        "samedi 20h00": [],
+        "dimanche 12h30": [],
+        "dimanche 16h30": [],
+        "dimanche 18h30": [],
+        "dimanche 19h30": [],
+    }
+    divers = {
+        'lit en tente prêtres': 0,
+        ' ': ' ',
+        'Observations ou souhaits particuliers': ' ',
+        '  ': ' ',
+    }   
 
     for item_dict in liste_reponses:
         if 'Nom et Prénom' not in item_dict.keys() and 'Name & Firstname' not in item_dict.keys():
@@ -351,7 +426,65 @@ if __name__ == '__main__':
             # Lit dans la tente prêtres (clergé)
             elif 'Je souhaite avoir un lit dans la tente prêtres (clergé)' in _clef:
                 if _item[0] not in ['NON', 'NO', 'NEIN']:
-                    lit_tente_pretres += 1
+                    divers['lit en tente prêtres'] += 1
+            elif 'Chapitre des porteurs de croix (tête de colonne)' in _clef:
+                for _jour in _item:
+                    for demis in dico_choix["J'accepte d'aider les services suivants :"]:
+                        if _jour in demis:
+                            porteurs_de_croix[demis[0]].append(nom)
+            elif "Service 'Régulation sécurité' (marche avec le jalon)" in _clef:
+                for _jour in _item:
+                    for demis in dico_choix["J'accepte d'aider les services suivants :"]:
+                        if _jour in demis:
+                            regulation_securite[demis[0]].append(nom)
+            elif "Aide aux chapitres en manque d'aumônier" in _clef:
+                for _jour in _item:
+                    for demis in dico_choix["J'accepte d'aider les services suivants :"]:
+                        if _jour in demis:
+                            aides_chapitres[demis[0]].append(nom)
+            elif "Logistique des bivouacs (par demi-journée" in _clef:
+                for _jour in _item:
+                    for demis in dico_choix["J'accepte d'aider les services suivants :"]:
+                        if _jour in demis:
+                            logistique_bivouacs[demis[0]].append(nom)
+            elif "Logistique des haltes (service d'1/2h" in _clef:
+                for _jour in _item:
+                    for demis in dico_choix["J'accepte d'aider les services suivants :"]:
+                        if _jour in demis:
+                            logistique_haltes[demis[0]].append(nom)
+            elif "Éclopés : méditations, chants et confessions" in _clef:
+                for _jour in _item:
+                    for demis in dico_choix["J'accepte d'aider les services suivants :"]:
+                        if _jour in demis:
+                            eclopes[demis[0]].append(nom)
+            elif "Je célébrerai la sainte messe Bivouac Greffiers" in _clef:
+                for _jour in _item:
+                    for jours in dico_choix['Je célébrerai la sainte messe']:
+                        if _jour in jours:
+                            messes_greffiers[jours[0]].append(nom)
+            elif "Je célébrerai la sainte messe Bivouac Trou Moreau" in _clef:
+                for _jour in _item:
+                    for jours in dico_choix['Je célébrerai la sainte messe']:
+                        if _jour in jours:
+                            messes_trou_moreau[jours[0]].append(nom)
+            elif "Je célébrerai la sainte messe St Nicolas du Chardonnet" in _clef:
+                for _jour in _item:
+                    for jours in dico_choix['Je célébrerai la sainte messe']:
+                        if _jour in jours:
+                            messes_st_nic[jours[0]].append(nom)
+            elif "Je célébrerai la sainte messe Chartres" in _clef:
+                for _jour in _item:
+                    for jours in dico_choix['Je célébrerai la sainte messe']:
+                        if _jour in jours:
+                            messes_chartres[jours[0]].append(nom)
+            elif "J'accepte de célébrer la messe pour les services de la logistique aux horaires suivants :" in _clef:
+                for _jour in _item:
+                    messes_logistiques[_jour.split(' (')[0]].append(nom)
+            elif "Observations ou souhaits particuliers" in _clef:
+                for _jour in _item:
+                    divers.update({nom: _item[0]})
+            # else:
+            #     print(_clef)
 
     # résultats
     wb = Workbook()
@@ -362,7 +495,19 @@ if __name__ == '__main__':
     vers_xlsx(transport, 'transport entre colones', wb)
     vers_xlsx(repas_adulte, 'repas colone adulte', wb)
     vers_xlsx(repas_enfant, 'repas colone enfant', wb)
-    vers_xlsx({"Lit tente prêtres": lit_tente_pretres}, 'Lits de camp', wb)
+    vers_xlsx(divers, 'Divers', wb)
+    vers_xlsx(porteurs_de_croix, 'porteurs de croix', wb)
+    vers_xlsx(regulation_securite, 'minist. régulation sécurité', wb)
+    vers_xlsx(aides_chapitres, 'minist. aux chapitres', wb)
+    vers_xlsx(logistique_bivouacs, 'minist. logistique des bivouacs', wb)
+    vers_xlsx(logistique_haltes, 'minist. logistique des haltes', wb)
+    vers_xlsx(eclopes, 'minist. éclopés', wb)
+    vers_xlsx(messes_logistiques, 'messes services logistiques', wb)
+    vers_xlsx(messes_chartres, 'messe à chartres', wb)
+    vers_xlsx(messes_st_nic, 'messe à st Nic', wb)
+    vers_xlsx(messes_trou_moreau, 'messe au Trou Moreau', wb)
+    vers_xlsx(messes_greffiers, 'messe aux Greffiers', wb)
+
     #
     del wb['Sheet']
     # Save the file
