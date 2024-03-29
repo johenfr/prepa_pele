@@ -207,6 +207,7 @@ if __name__ == '__main__':
 
     liste_inscrits = {
         'Nom': [],
+        'Téléphone': [],
         'Prieuré': [],
         'Région': [],
         'Chapitre': [],
@@ -214,7 +215,8 @@ if __name__ == '__main__':
         'samedi après-midi': [],
         'dimanche matin': [],
         'dimanche après-midi': [],
-        'lundi matin': []
+        'lundi matin': [],
+        'langues': []
     }
     liste_colones = {
         'Je marche sur la colonne adulte ou enfant ? adultes': 'Adultes',
@@ -351,6 +353,14 @@ if __name__ == '__main__':
             liste_inscrits['Chapitre'].append(item_dict['Chapitre :'][0])
         except KeyError:
             liste_inscrits['Chapitre'].append('')
+        try:
+            liste_inscrits['Téléphone'].append(item_dict['Téléphone mobile'][0])
+        except KeyError:
+            liste_inscrits['Téléphone'].append('')
+        try:
+            liste_inscrits['langues'].append(','.join(item_dict['Langues proposées pour les confessions']))
+        except KeyError:
+            liste_inscrits['langues'].append('')
         for demis in dico_choix['Je marche sur la colonne adulte ou enfant ?']:
             presence_demi = ''
             for colone in liste_colones.keys():
