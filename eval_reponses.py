@@ -162,6 +162,18 @@ if __name__ == '__main__':
     choice_dico = {}
     for item_dict in questions:
         if 'questionItem' in item_dict.keys():
+            if 'choiceQuestion' in item_dict['questionItem']['question'].keys():
+                if item_dict['itemId'] not in choice_dico.keys():
+                    choice_dico[item_dict['itemId']] = {'choix': item_dict['title'], 'valeurs': []}
+                _list_valeurs = []
+                for valeur in item_dict['questionItem']['question']['choiceQuestion']['options']:
+                    try:
+                        _list_valeurs.append(valeur['value'])
+                    except KeyError:
+                        for _clef in valeur.keys():
+                            _list_valeurs.append(_clef)
+                            break
+                choice_dico[item_dict['itemId']]['valeurs'].append(_list_valeurs)
             if item_dict['questionItem']['question']['questionId'] not in question_dico.keys():
                 question_dico[item_dict['questionItem']['question']['questionId']] = []
             question_dico[item_dict['questionItem']['question']['questionId']].append(item_dict['title'])
@@ -183,6 +195,9 @@ if __name__ == '__main__':
         pprint.pp(reponses)
     dico_choix = {}
     for clef in choice_dico.keys():
+        if len(choice_dico[clef]['valeurs'][0]) * 2 != len(choice_dico[clef]['valeurs'][1]) + len(choice_dico[clef]['valeurs'][2]):
+            # incohérence => on ignore
+            continue
         dico_choix[choice_dico[clef]['choix']] = []
         for ind2 in range(len(choice_dico[clef]['valeurs'][0])):
             dico_choix[choice_dico[clef]['choix']].append([])
@@ -203,7 +218,6 @@ if __name__ == '__main__':
     if debug:
         for _id, valeur in question_dico.items():
             print("%s : %s" % (_id, valeur))
-    debug = False
 
     liste_inscrits = {
         'Nom': [],
@@ -358,7 +372,7 @@ if __name__ == '__main__':
         except KeyError:
             liste_inscrits['Téléphone'].append('')
         try:
-            liste_inscrits['langues'].append(','.join(item_dict['Langues proposées pour les confessions']))
+            liste_inscrits['langues'].append(', '.join(item_dict['Langues proposées pour les confessions']))
         except KeyError:
             liste_inscrits['langues'].append('')
         for demis in dico_choix['Je marche sur la colonne adulte ou enfant ?']:
@@ -417,22 +431,45 @@ if __name__ == '__main__':
                                                                              item_dict['Téléphone mobile'][0]))
             # repas colone adulte
             elif 'Merci de me prévoir un repas au bivouac ou sur la colonne adultes' in _clef:
+                _mes_choix=[]
+                for _clef in dico_choix.keys():
+                    if 'Merci de me prévoir un repas au bivouac ou sur la colonne adultes' in _clef:
+                        _mes_choix = dico_choix[_clef]
+                        break
+                if len(_item) == 0:
+                    _item.append('du petit déjeuner du samedi jusqu\'au déjeuner du lundi')
+                    print("%s : pas de réponse pour la présence aux repas" % nom)
                 for _jour in _item:
-                    if 'du petit déjeuner du samedi jusqu\'au déjeuner du lundi' in _jour or 'Saturday breakfast to Monday lunch' in _jour :
+                    if 'du petit déjeuner du samedi jusqu\'au déjeuner du lundi' in _jour or \
+                            'Saturday breakfast to Monday lunch' in _jour or \
+                            'vom Frühstück am Samstag bis zum Mittagessen am Montag' in _jour:
                         for _repas in repas_adulte.keys():
                             repas_adulte[_repas] += 1
                         for _, _repas_nom in repas_adulte_nominatif.items():
                             _repas_nom.append(nom)
                             pass
                         break
+                    elif _jour == "aucun":
+                        break
                     else:
-                        repas_adulte[_jour] += 1
-                        repas_adulte_nominatif[_jour].append(nom)
+                        for list_j in _mes_choix:
+                            if _jour in list_j:
+                                repas_adulte[list_j[0]] += 1
+                                repas_adulte_nominatif[list_j[0]].append(nom)
+                                break
             # repas colone enfant
             elif 'Si je me trouve à midi sur la colonne enfants je m\'inscris pour être prévu au repas enfant' in _clef:
+                _mes_choix=[]
+                for _clef in dico_choix.keys():
+                    if 'Si je me trouve à midi sur la colonne enfants je m\'inscris pour être prévu au repas enfant' in _clef:
+                        _mes_choix = dico_choix[_clef]
+                        break
                 for _jour in _item:
-                    repas_enfant[_jour] += 1
-                    repas_enfant_nominatif[_jour].append(nom)
+                    for list_j in _mes_choix:
+                        if _jour in list_j:
+                            repas_enfant[list_j[0]] += 1
+                            repas_enfant_nominatif[list_j[0]].append(nom)
+                            break
             # Lit dans la tente prêtres (clergé)
             elif 'Je souhaite avoir un lit dans la tente prêtres (clergé)' in _clef:
                 if _item[0] not in ['NON', 'NO', 'NEIN']:
@@ -489,7 +526,13 @@ if __name__ == '__main__':
                             messes_chartres[jours[0]].append(nom)
             elif "J'accepte de célébrer la messe pour les services de la logistique aux horaires suivants :" in _clef:
                 for _jour in _item:
-                    messes_logistiques[_jour.split(' (')[0]].append(nom)
+                    try:
+                        messes_logistiques[_jour.split(' (')[0]].append(nom)
+                    except KeyError:
+                        if 'Option 7' in _jour.split(' (')[0]:
+                            pass  # ligne supplémentaire dans le questionnaire allemand
+                        else:
+                            print('%s %s' % (nom, _item))
             elif "Observations ou souhaits particuliers" in _clef:
                 for _jour in _item:
                     divers.update({nom: _item[0]})
