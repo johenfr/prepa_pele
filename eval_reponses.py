@@ -79,12 +79,12 @@ def vers_xlsx(dico, nom, xlsx):
     xlsx.create_sheet(nom)
     page = xlsx[nom]
     indice1 = 1
+    indice2 = 1
     for clef1, valeur1 in dico.items():
         if isinstance(valeur1, (dict)):
             cellule = page.cell(row=1, column=indice1) 
             cellule.value = clef1
             indice1 += len(valeur1.keys())
-            indice2 = 1
             for clef2, valeur2 in valeur1.items():
                 cellule = page.cell(row=2, column=indice2) 
                 cellule.value = clef2
@@ -413,7 +413,10 @@ if __name__ == '__main__':
                 for _jour in _item:
                     if _jour not in transport[sens].keys():
                         transport[sens][_jour] = []
-                    transport[sens][_jour].append("%s (%s)" % (nom, item_dict['Téléphone mobile'][0]))
+                    try:
+                        transport[sens][_jour].append("%s (%s)" % (nom, item_dict['Téléphone mobile'][0]))
+                    except KeyError:
+                        transport[sens][_jour].append("%s (pas de téléphone)" % nom)
             # Départ en cours de route
             elif 'Si je pars avant l\'arrivée à Paris, je précise quand :' in _clef:
                 _jour = _clef.split(' : ')[1]
@@ -538,7 +541,7 @@ if __name__ == '__main__':
                     divers.update({nom: _item[0]})
             # else:
             #     print(_clef)
-
+    #
     # résultats
     wb = Workbook()
     # grab the active worksheet
