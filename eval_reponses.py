@@ -395,7 +395,7 @@ if __name__ == '__main__':
                 _jour = _clef.split(' : ')[1]
                 if item_dict[_clef][0] in dico_choix['Si j\'arrive en cours de route, je précise quand :'][0]:
                     continue
-                if _jour not in transport.keys():
+                if _jour not in arrivee_differente.keys():
                     arrivee_differente[_jour] = []
                 precision = 'Si on doit venir vous chercher à la gare, précisez où et à quelle heure'
                 if precision in item_dict.keys():
@@ -417,6 +417,23 @@ if __name__ == '__main__':
                         transport[sens][_jour].append("%s (%s)" % (nom, item_dict['Téléphone mobile'][0]))
                     except KeyError:
                         transport[sens][_jour].append("%s (pas de téléphone)" % nom)
+            elif 'Je souhaite recevoir un plan de Chartres' in _clef:
+                if 'autre' not in transport.keys():
+                    transport['autre'] = {}
+                if "n" not in _item[0].lower():
+                    if 'plan de Chartres' not in transport['autre'].keys():
+                        transport['autre']['plan de Chartres'] = []
+                    try:
+                        transport['autre']['plan de Chartres'].append("%s (%s - %s)" % 
+                                                                      (nom,
+                                                                       item_dict['Téléphone mobile'][0],
+                                                                       item_dict['courriel'])
+                                                                      )
+                    except KeyError:
+                        try:
+                            transport['autre']['plan de Chartres'].append("%s (%s)" % (nom, item_dict['courriel']))
+                        except KeyError:
+                            transport['autre']['plan de Chartres'].append("%s (ni téléphone ni mail)" % nom)
             # Départ en cours de route
             elif 'Si je pars avant l\'arrivée à Paris, je précise quand :' in _clef:
                 _jour = _clef.split(' : ')[1]
