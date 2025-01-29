@@ -13,6 +13,7 @@ import pprint
 import pickle
 import subprocess
 import json
+import shutil
 
 # import codecs
 # import zipfile
@@ -20,24 +21,27 @@ import json
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+#from google.auth.transport.requests import Request
 
 from gforms import Form
 
 from openpyxl import Workbook
+from openpyxl import load_workbook
 from openpyxl.worksheet.properties import PageSetupProperties
-from openpyxl.worksheet.worksheet import Worksheet
+#from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.styles import PatternFill
+from openpyxl.utils import get_column_letter
 
 
-def print_form(formId):
-    url = 'https://docs.google.com/forms/d/%s/edit' % form_id
+def print_form(form_id):
+    url = f'https://docs.google.com/forms/d/{form_id}/edit'
     form = Form()
 
     form.load(url)
     print(form.to_str(indent=2))  # a text representation, may be useful for CLI applications
 
 
-def retrieve_from_google_forms(formId):
+def retrieve_from_google_forms(form_id):
     SCOPES = "https://www.googleapis.com/auth/forms.body.readonly https://www.googleapis.com/auth/forms.responses.readonly"
     credentials = None
     if os.path.exists('credentials.dat'):
@@ -75,7 +79,7 @@ def iter_dict(dico, item2find):
                 print(valeur)
 
 
-def vers_xlsx(dico, nom, xlsx):
+def vers_xlsx(dico, nom, xlsx, _freeze=None):
     xlsx.create_sheet(nom)
     page = xlsx[nom]
     indice1 = 1
@@ -115,7 +119,48 @@ def vers_xlsx(dico, nom, xlsx):
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
         adjusted_width = (max_length + 1) * 1.005
+        if adjusted_width > 80:
+            adjusted_width = 80.0
         page.column_dimensions[column].width = adjusted_width
+    if _freeze:
+        page.freeze_panes = _freeze
+
+
+def comparaison_xslx(fichier1, fichier2):
+    redFill = PatternFill(start_color='FFFF0000',
+                   end_color='FFFF0000',
+                   fill_type='solid')
+    wk1 = load_workbook(fichier1)
+    wk2 = load_workbook(fichier2)
+    compare = 'ligne'
+    for page in wk1.sheetnames:
+        if wk1[page].freeze_panes is not None:
+            if wk1[page].freeze_panes == 'B2':
+                compare = 'ligne'
+            else:
+                compare = 'colone'
+        if compare == 'ligne':
+            lignes_a_comparer = list(wk2[page].iter_rows(values_only=True))
+            for ligne in wk1[page].iter_rows():
+                valeurs = tuple([cell.value for cell in ligne])
+                if valeurs not in lignes_a_comparer:
+                    for cellule in ligne:
+                        cellule.fill = redFill
+        if compare == 'colone':
+            max_col = max(wk1[page].max_column, wk2[page].max_column)
+            for i in range(max_col):
+                try:
+                    if len(wk2[page][get_column_letter(i)]) > len(wk1[page][get_column_letter(i)]):
+                        wk1[page][get_column_letter(i)][1].fill = redFill
+                    col_a_comparer = [cell.value for cell in wk2[page][get_column_letter(i)]]
+                    for cellule in wk1[page][get_column_letter(i)]:
+                        if cellule.value not in col_a_comparer:
+                            cellule.fill = redFill
+                except ValueError:
+                    if i == 0:
+                        pass
+    wk1.save(fichier1)
+    pass
 
 
 if __name__ == '__main__':
@@ -243,7 +288,7 @@ if __name__ == '__main__':
     transport = {}
     repas_adulte = {
         'samedi - petit-déjeuner': 0,
-        'samedi - déjeuner (pique-nique)': 0,
+        'samedi - déjeuner (pique-nique)': -7,  # correctif mauvaise inscription
         'samedi - dîner (à table)': 0,
         'dimanche - petit-déjeuner': 0,
         'dimanche - déjeuner (pique-nique)': 0,
@@ -268,7 +313,7 @@ if __name__ == '__main__':
         'dimanche - déjeuner (pique-nique)': [],
     }
     repas_enfant = {
-        'samedi - déjeuner (pique-nique)': 0,
+        'samedi - déjeuner (pique-nique)': 3,  # correctif mauvaise inscription
         'dimanche - déjeuner (pique-nique)': 0,
     }
     porteurs_de_croix = {
@@ -561,28 +606,37 @@ if __name__ == '__main__':
     #
     # résultats
     wb = Workbook()
+    wb2 = Workbook()
+
     # grab the active worksheet
-    vers_xlsx(liste_inscrits, 'liste des inscrits', wb)
-    vers_xlsx(arrivee_differente, 'arrivée différente', wb)
-    vers_xlsx(depart_different, 'départ différent', wb)
-    vers_xlsx(transport, 'transport entre colones', wb)
+    vers_xlsx(liste_inscrits, 'liste des inscrits', wb, 'B2')
+    vers_xlsx(arrivee_differente, 'arrivée différente', wb, 'A2')
+    vers_xlsx(depart_different, 'départ différent', wb, 'A2')
+    vers_xlsx(transport, 'transport entre colones', wb, 'A3')
     vers_xlsx(repas_adulte, 'repas colone adulte', wb)
     vers_xlsx(repas_enfant, 'repas colone enfant', wb)
     vers_xlsx(divers, 'Divers', wb)
-    vers_xlsx(porteurs_de_croix, 'porteurs de croix', wb)
-    vers_xlsx(regulation_securite, 'minist. régulation sécurité', wb)
-    vers_xlsx(aides_chapitres, 'minist. aux chapitres', wb)
-    vers_xlsx(logistique_bivouacs, 'minist. logistique des bivouacs', wb)
-    vers_xlsx(logistique_haltes, 'minist. logistique des haltes', wb)
-    vers_xlsx(eclopes, 'minist. éclopés', wb)
-    vers_xlsx(messes_logistiques, 'messes services logistiques', wb)
-    vers_xlsx(messes_chartres, 'messe à chartres', wb)
-    vers_xlsx(messes_st_nic, 'messe à st Nic', wb)
-    vers_xlsx(messes_trou_moreau, 'messe au Trou Moreau', wb)
-    vers_xlsx(messes_greffiers, 'messe aux Greffiers', wb)
+    vers_xlsx(porteurs_de_croix, 'porteurs de croix', wb, 'A2')
+    vers_xlsx(regulation_securite, 'minist. régulation sécurité', wb, 'A2')
+    vers_xlsx(aides_chapitres, 'minist. aux chapitres', wb, 'A2')
+    vers_xlsx(logistique_bivouacs, 'minist. logistique des bivouacs', wb, 'A2')
+    vers_xlsx(logistique_haltes, 'minist. logistique des haltes', wb, 'A2')
+    vers_xlsx(eclopes, 'minist. éclopés', wb, 'A2')
+    vers_xlsx(messes_logistiques, 'messes services logistiques', wb, 'A2')
+    vers_xlsx(messes_chartres, 'messe à chartres', wb, 'A2')
+    vers_xlsx(messes_st_nic, 'messe à st Nic', wb, 'A2')
+    vers_xlsx(messes_trou_moreau, 'messe au Trou Moreau', wb, 'A2')
+    vers_xlsx(messes_greffiers, 'messe aux Greffiers', wb, 'A2')
+    vers_xlsx(repas_adulte_nominatif, 'repas adulte nominatif', wb2, 'A2')
+    vers_xlsx(repas_enfant_nominatif, 'repas enfant nominatif', wb2, 'A2')
 
     #
     del wb['Sheet']
+    del wb2['Sheet']
     # Save the file
+    os.remove("vieux_resultats.xlsx")
+    shutil.copyfile("resultats.xlsx", "vieux_resultats.xlsx")
     wb.save("resultats.xlsx")
+    wb2.save("repas_nom.xlsx")
+    comparaison_xslx("resultats.xlsx", "vieux_resultats.xlsx")
     subprocess.run(['open', "resultats.xlsx"], check=False)

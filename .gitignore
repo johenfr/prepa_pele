@@ -375,8 +375,6 @@ client_secret.json
 
 questions.json
 
-resultats.xlsx
+*.xlsx*
 
 forms_id.json
-
-.~lock.resultats.xlsx#
