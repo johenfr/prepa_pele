@@ -288,7 +288,7 @@ if __name__ == '__main__':
     transport = {}
     repas_adulte = {
         'samedi - petit-déjeuner': 0,
-        'samedi - déjeuner (pique-nique)': -7,  # correctif mauvaise inscription
+        'samedi - déjeuner (pique-nique)': 0,  # correctif mauvaise inscription
         'samedi - dîner (à table)': 0,
         'dimanche - petit-déjeuner': 0,
         'dimanche - déjeuner (pique-nique)': 0,
@@ -313,7 +313,7 @@ if __name__ == '__main__':
         'dimanche - déjeuner (pique-nique)': [],
     }
     repas_enfant = {
-        'samedi - déjeuner (pique-nique)': 3,  # correctif mauvaise inscription
+        'samedi - déjeuner (pique-nique)': 0,  # correctif mauvaise inscription
         'dimanche - déjeuner (pique-nique)': 0,
     }
     porteurs_de_croix = {
@@ -394,11 +394,14 @@ if __name__ == '__main__':
     }   
 
     for item_dict in liste_reponses:
-        if 'Nom et Prénom' not in item_dict.keys() and 'Name & Firstname' not in item_dict.keys():
+        if 'Nom' not in item_dict.keys() and 'Name' not in item_dict.keys():
             if debug:
                 print('%s ne participera pas au pèlerinage' % item_dict['courriel'])
             continue
-        nom = '%s %s' % (item_dict['Titre'][0], item_dict['Nom et Prénom'][0])
+        try:
+            nom = '%s %s %s' % (item_dict['Titre'][0], item_dict['Nom'][0].upper(), item_dict['Prénom'][0])
+        except KeyError:
+            nom = '%s %s' % (item_dict['Titre'][0], item_dict['Nom'][0].upper())
         liste_inscrits['Nom'].append(nom)
         try:
             liste_inscrits['Prieuré'].append(item_dict['Prieuré, couvent ou paroisse (nom et localité)'][0])
@@ -634,7 +637,8 @@ if __name__ == '__main__':
     del wb['Sheet']
     del wb2['Sheet']
     # Save the file
-    os.remove("vieux_resultats.xlsx")
+    if os.path.exists("vieux_resultats.xlsx"):
+        os.remove("vieux_resultats.xlsx")
     shutil.copyfile("resultats.xlsx", "vieux_resultats.xlsx")
     wb.save("resultats.xlsx")
     wb2.save("repas_nom.xlsx")
