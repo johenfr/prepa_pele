@@ -288,10 +288,10 @@ if __name__ == '__main__':
     transport = {}
     repas_adulte = {
         'samedi - petit-déjeuner': 0,
-        'samedi - déjeuner (pique-nique)': 0,  # correctif mauvaise inscription
+        'samedi - déjeuner (pique-nique)': -1,  # correctif mauvaise inscription
         'samedi - dîner (à table)': 0,
         'dimanche - petit-déjeuner': 0,
-        'dimanche - déjeuner (pique-nique)': 0,
+        'dimanche - déjeuner (pique-nique)': -1,  # correctif mauvaise inscription
         'dimanche - apéritif et dîner avec tous les confrères présents (à table)': 0,
         'lundi - petit-déjeuner': 0,
         'lundi - déjeuner (pique-nique)': 0,
@@ -313,8 +313,8 @@ if __name__ == '__main__':
         'dimanche - déjeuner (pique-nique)': [],
     }
     repas_enfant = {
-        'samedi - déjeuner (pique-nique)': 0,  # correctif mauvaise inscription
-        'dimanche - déjeuner (pique-nique)': 0,
+        'samedi - déjeuner (pique-nique)': -2,  # correctif mauvaise inscription
+        'dimanche - déjeuner (pique-nique)': -1,  # correctif mauvaise inscription
     }
     porteurs_de_croix = {
         'samedi matin': [],
@@ -391,8 +391,8 @@ if __name__ == '__main__':
         ' ': ' ',
         'Observations ou souhaits particuliers': ' ',
         '  ': ' ',
-    }   
-
+    }
+    dico_nom_contacts = {}
     for item_dict in liste_reponses:
         if 'Nom' not in item_dict.keys() and 'Name' not in item_dict.keys():
             if debug:
@@ -402,6 +402,7 @@ if __name__ == '__main__':
             nom = '%s %s %s' % (item_dict['Titre'][0], item_dict['Nom'][0].upper(), item_dict['Prénom'][0])
         except KeyError:
             nom = '%s %s' % (item_dict['Titre'][0], item_dict['Nom'][0].upper())
+        dico_nom_contacts[nom] = item_dict['courriel']
         liste_inscrits['Nom'].append(nom)
         try:
             liste_inscrits['Prieuré'].append(item_dict['Prieuré, couvent ou paroisse (nom et localité)'][0])
@@ -606,6 +607,32 @@ if __name__ == '__main__':
                     divers.update({nom: _item[0]})
             # else:
             #     print(_clef)
+    #
+    # TODO ajouter les repas de midi pour les transports entre les colonnes + mail si E+A
+    for _sens, transport_i in transport.items():
+        for _jour, transport_j in transport_i.items():
+            for indice, personne in enumerate(transport_j):
+                _nom = personne.split(" (")[0]
+                if 'samedi' in _jour:
+                    nb_repas = 0
+                    if _nom in repas_adulte_nominatif['samedi - déjeuner (pique-nique)']:
+                        nb_repas+=1
+                        transport_j[indice] += " repas A"
+                    if _nom in repas_enfant_nominatif['samedi - déjeuner (pique-nique)']:
+                        nb_repas+=1
+                        transport_j[indice] += " repas E"
+                    if nb_repas == 2:
+                        transport_j[indice] += " (%s)" % dico_nom_contacts[_nom]
+                elif 'dimanche' in _jour:
+                    nb_repas = 0
+                    if _nom in repas_adulte_nominatif['dimanche - déjeuner (pique-nique)']:
+                        nb_repas+=1
+                        transport_j[indice] += " repas A"
+                    if _nom in repas_enfant_nominatif['dimanche - déjeuner (pique-nique)']:
+                        nb_repas+=1
+                        transport_j[indice] += " repas E"
+                    if nb_repas == 2:
+                        transport_j[indice] += " (%s)" % dico_nom_contacts[_nom]
     #
     # résultats
     wb = Workbook()
